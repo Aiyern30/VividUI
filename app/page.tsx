@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button, buttonVariants } from "@/components/ui/button"; // ShadCN Button
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"; // Choose your theme
 
 export default function CustomizeButtonPage() {
   const [text, setText] = useState("Click Me");
@@ -12,7 +14,6 @@ export default function CustomizeButtonPage() {
   const [size, setSize] = useState<"default" | "sm" | "lg" | "icon">("default");
   const [customClass, setCustomClass] = useState("");
   const [buttonCode, setButtonCode] = useState<string>("");
-  console.log(buttonCode);
 
   // Fetch the button code from the API on component mount
   useEffect(() => {
@@ -21,7 +22,7 @@ export default function CustomizeButtonPage() {
         const response = await fetch("/api/button-code");
         if (response.ok) {
           const data = await response.json();
-          setButtonCode(data.code); // Set the code in state
+          setButtonCode(data.code);
         } else {
           console.error("Failed to fetch button code");
         }
@@ -40,7 +41,7 @@ export default function CustomizeButtonPage() {
   };
 
   return (
-    <div className="flex items-stretch min-h-screen">
+    <div className="flex items-stretch max-h-screen">
       {/* Left Panel: Customization */}
       <div className="flex flex-col items-center justify-start space-y-6 w-1/4 p-6 bg-gray-100">
         <h1 className="text-2xl font-bold">Customize Your Button</h1>
@@ -130,10 +131,12 @@ export default function CustomizeButtonPage() {
       </div>
 
       {/* Right Panel: Code Preview */}
-      <div className="flex flex-col space-y-4 w-3/4 p-6 bg-gray-800 text-white">
+      <div className="flex flex-col space-y-4 w-3/4 p-6 bg-gray-800 text-white overflow-auto">
         <h2 className="text-xl font-bold">Generated Button.tsx Code</h2>
         <div className="bg-gray-700 p-4 rounded-md w-full">
-          <pre className="overflow-x-auto text-sm">{buttonCode}</pre>
+          <SyntaxHighlighter language="jsx" style={oneDark}>
+            {buttonCode || "// Code will appear here after fetching"}
+          </SyntaxHighlighter>
         </div>
 
         <button
