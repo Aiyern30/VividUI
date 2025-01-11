@@ -16,15 +16,59 @@ export default function CustomizeButtonPage() {
   const [size, setSize] = useState<"default" | "sm" | "lg" | "icon">("default");
   const [customClass, setCustomClass] = useState("");
   const [buttonCode, setButtonCode] = useState<string>("");
+  const [variantStyles, setVariantStyles] = useState<
+    { name: string; styles: string }[]
+  >([]);
+  const [sizeStyles, setSizeStyles] = useState<
+    { name: string; styles: string }[]
+  >([]);
   const { toast } = useToast();
+  console.log("variantStyles", variantStyles);
+  console.log("sizeStyles", sizeStyles);
 
-  // Fetch the button code from the API on component mount
   useEffect(() => {
     const fetchButtonCode = async () => {
       try {
         const response = await fetch("/api/button-code");
         if (response.ok) {
           const data = await response.json();
+
+          const variantRegex = /variant:\s*\{\s*([\s\S]*?)\s*\},/m;
+          const sizeRegex = /size:\s*\{\s*([\s\S]*?)\s*\},/m;
+
+          const extractedVariants: { name: string; styles: string }[] = [];
+          const extractedSizes: { name: string; styles: string }[] = [];
+
+          // Parse `variant` styles
+          const variantMatch = variantRegex.exec(data.code);
+          if (variantMatch) {
+            const variantContent = variantMatch[1];
+            const styleRegex = /(\w+):\s*"(.*?)"/g;
+            let match;
+            while ((match = styleRegex.exec(variantContent))) {
+              extractedVariants.push({
+                name: match[1],
+                styles: match[2],
+              });
+            }
+          }
+
+          // Parse `size` styles
+          const sizeMatch = sizeRegex.exec(data.code);
+          if (sizeMatch) {
+            const sizeContent = sizeMatch[1];
+            const styleRegex = /(\w+):\s*"(.*?)"/g;
+            let match;
+            while ((match = styleRegex.exec(sizeContent))) {
+              extractedSizes.push({
+                name: match[1],
+                styles: match[2],
+              });
+            }
+          }
+
+          setVariantStyles(extractedVariants);
+          setSizeStyles(extractedSizes);
           setButtonCode(data.code);
         } else {
           console.error("Failed to fetch button code");
@@ -38,11 +82,23 @@ export default function CustomizeButtonPage() {
   }, []);
 
   const handleCopyCode = () => {
-    toast({
-      title: "Copied!",
-      description: "The button code has been copied to your clipboard.",
-      variant: "default",
-    });
+    navigator.clipboard
+      .writeText(buttonCode)
+      .then(() => {
+        toast({
+          title: "Copied!",
+          description: "The button code has been copied to your clipboard.",
+          variant: "default",
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to copy code: ", error);
+        toast({
+          title: "Error!",
+          description: "Failed to copy the button code. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
 
   return (
