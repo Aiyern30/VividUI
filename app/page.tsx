@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, buttonVariants } from "@/components/ui/button"; // ShadCN Button
 import { cn } from "@/lib/utils";
 
@@ -11,24 +11,38 @@ export default function CustomizeButtonPage() {
   >("default");
   const [size, setSize] = useState<"default" | "sm" | "lg" | "icon">("default");
   const [customClass, setCustomClass] = useState("");
+  const [buttonCode, setButtonCode] = useState<string>("");
+  console.log(buttonCode);
 
-  const generateCode = () => {
-    return `<Button variant="${variant}" size="${size}" className="${cn(
-      customClass
-    )}">${text}</Button>`;
-  };
+  // Fetch the button code from the API on component mount
+  useEffect(() => {
+    const fetchButtonCode = async () => {
+      try {
+        const response = await fetch("/api/button-code");
+        if (response.ok) {
+          const data = await response.json();
+          setButtonCode(data.code); // Set the code in state
+        } else {
+          console.error("Failed to fetch button code");
+        }
+      } catch (error) {
+        console.error("Error fetching button code", error);
+      }
+    };
+
+    fetchButtonCode();
+  }, []);
 
   const handleCopyCode = () => {
-    const code = generateCode();
-    navigator.clipboard.writeText(code).then(() => {
-      alert("Code copied to clipboard!");
+    navigator.clipboard.writeText(buttonCode).then(() => {
+      alert("Button code copied to clipboard!");
     });
   };
 
   return (
-    <div className="flex items-stretch h-screen">
+    <div className="flex items-stretch min-h-screen">
       {/* Left Panel: Customization */}
-      <div className="flex flex-col items-center justify-start space-y-6 w-80 p-6 bg-gray-100">
+      <div className="flex flex-col items-center justify-start space-y-6 w-1/4 p-6 bg-gray-100">
         <h1 className="text-2xl font-bold">Customize Your Button</h1>
 
         {/* Customization Options */}
@@ -116,10 +130,10 @@ export default function CustomizeButtonPage() {
       </div>
 
       {/* Right Panel: Code Preview */}
-      <div className="flex flex-col space-y-4 w-80 p-6 bg-gray-800 text-white">
-        <h2 className="text-xl font-bold">Generated Code</h2>
+      <div className="flex flex-col space-y-4 w-3/4 p-6 bg-gray-800 text-white">
+        <h2 className="text-xl font-bold">Generated Button.tsx Code</h2>
         <div className="bg-gray-700 p-4 rounded-md w-full">
-          <pre className="overflow-x-auto text-sm">{generateCode()}</pre>
+          <pre className="overflow-x-auto text-sm">{buttonCode}</pre>
         </div>
 
         <button
