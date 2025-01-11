@@ -133,7 +133,7 @@ export default function CustomizeButtonPage() {
       {/* Right Panel: Code Preview */}
       <div className="flex flex-col space-y-4 w-3/4 p-6 bg-gray-800 text-white overflow-auto">
         <h2 className="text-xl font-bold">Generated Button.tsx Code</h2>
-        <div className="bg-gray-700 p-4 rounded-md w-full">
+        <div className="bg-gray-700 p-4 rounded-md w-full custom-scroll">
           <SyntaxHighlighter language="jsx" style={oneDark}>
             {buttonCode || "// Code will appear here after fetching"}
           </SyntaxHighlighter>
