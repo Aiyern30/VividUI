@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism"; // Choose your theme
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function CustomizeButtonPage() {
   const [text, setText] = useState("Click Me");
@@ -16,15 +15,12 @@ export default function CustomizeButtonPage() {
   const [size, setSize] = useState<"default" | "sm" | "lg" | "icon">("default");
   const [customClass, setCustomClass] = useState("");
   const [buttonCode, setButtonCode] = useState<string>("");
-  const [variantStyles, setVariantStyles] = useState<
-    { name: string; styles: string }[]
-  >([]);
-  const [sizeStyles, setSizeStyles] = useState<
-    { name: string; styles: string }[]
-  >([]);
+  const [variantStyles, setVariantStyles] = useState<any>([]);
+  const [sizeStyles, setSizeStyles] = useState<any>([]);
+  const [modifiedStyles, setModifiedStyles] = useState<Record<string, string>>(
+    {}
+  );
   const { toast } = useToast();
-  console.log("variantStyles", variantStyles);
-  console.log("sizeStyles", sizeStyles);
 
   useEffect(() => {
     const fetchButtonCode = async () => {
@@ -32,20 +28,16 @@ export default function CustomizeButtonPage() {
         const response = await fetch("/api/button-code");
         if (response.ok) {
           const data = await response.json();
+          const regex = /(\w+):\s*"(.*?)"/g;
+          const extractedVariants: any = [];
+          const extractedSizes: any = [];
+          let match;
 
-          const variantRegex = /variant:\s*\{\s*([\s\S]*?)\s*\},/m;
-          const sizeRegex = /size:\s*\{\s*([\s\S]*?)\s*\},/m;
-
-          const extractedVariants: { name: string; styles: string }[] = [];
-          const extractedSizes: { name: string; styles: string }[] = [];
-
-          // Parse `variant` styles
-          const variantMatch = variantRegex.exec(data.code);
-          if (variantMatch) {
-            const variantContent = variantMatch[1];
+          // Extract variant styles
+          const variantContent = data.code.match(/variant: \{([\s\S]+?)\}/);
+          if (variantContent) {
             const styleRegex = /(\w+):\s*"(.*?)"/g;
-            let match;
-            while ((match = styleRegex.exec(variantContent))) {
+            while ((match = styleRegex.exec(variantContent[1]))) {
               extractedVariants.push({
                 name: match[1],
                 styles: match[2],
@@ -53,13 +45,11 @@ export default function CustomizeButtonPage() {
             }
           }
 
-          // Parse `size` styles
-          const sizeMatch = sizeRegex.exec(data.code);
-          if (sizeMatch) {
-            const sizeContent = sizeMatch[1];
+          // Extract size styles
+          const sizeContent = data.code.match(/size: \{([\s\S]+?)\}/);
+          if (sizeContent) {
             const styleRegex = /(\w+):\s*"(.*?)"/g;
-            let match;
-            while ((match = styleRegex.exec(sizeContent))) {
+            while ((match = styleRegex.exec(sizeContent[1]))) {
               extractedSizes.push({
                 name: match[1],
                 styles: match[2],
@@ -69,7 +59,7 @@ export default function CustomizeButtonPage() {
 
           setVariantStyles(extractedVariants);
           setSizeStyles(extractedSizes);
-          setButtonCode(data.code);
+          setButtonCode(data.code); // Set initial button code
         } else {
           console.error("Failed to fetch button code");
         }
@@ -80,6 +70,22 @@ export default function CustomizeButtonPage() {
 
     fetchButtonCode();
   }, []);
+
+  // Handle changes to the variant styles
+  const handleVariantStyleChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    const updatedStyles = e.target.value;
+    setModifiedStyles((prev) => ({
+      ...prev,
+      [variant]: updatedStyles,
+    }));
+  };
+
+  // Find the selected variant styles from the array
+  const selectedVariant = variantStyles.find((v: any) => v.name === variant);
+  const currentVariantStyles =
+    modifiedStyles[variant] || selectedVariant?.styles || "";
 
   const handleCopyCode = () => {
     navigator.clipboard
@@ -169,12 +175,11 @@ export default function CustomizeButtonPage() {
             <label className="block mb-2">
               Custom Styles (Tailwind Classes)
             </label>
-            <input
-              type="text"
-              value={customClass}
-              onChange={(e) => setCustomClass(e.target.value)}
-              placeholder="e.g., text-white bg-blue-500"
-              className="border px-3 py-2 rounded w-full"
+            <textarea
+              value={currentVariantStyles}
+              onChange={handleVariantStyleChange}
+              placeholder="Modify the variant styles here..."
+              className="border px-3 py-2 rounded w-full h-32 resize-none"
             />
           </div>
         </div>
@@ -184,9 +189,20 @@ export default function CustomizeButtonPage() {
           <Button
             variant={variant}
             size={size}
-            className={cn(customClass)} // Apply custom classes
+            className={cn(customClass, currentVariantStyles)} // Apply custom classes
           >
             {text}
+          </Button>
+        </div>
+
+        {/* Save Button */}
+        <div className="mt-6 w-full">
+          <Button
+            variant={variant}
+            size={size}
+            className={cn(customClass, currentVariantStyles, "w-full")} // Full-width button
+          >
+            Save
           </Button>
         </div>
       </div>
@@ -195,7 +211,7 @@ export default function CustomizeButtonPage() {
       <div className="flex flex-col space-y-4 w-3/4 p-6 bg-gray-800 text-white overflow-auto min-h-screen">
         <h2 className="text-xl font-bold">Generated Button.tsx Code</h2>
         <div className="bg-gray-700 p-4 rounded-md w-full custom-scroll">
-          <SyntaxHighlighter language="jsx" style={oneDark}>
+          <SyntaxHighlighter language="typescript" style={oneDark}>
             {buttonCode || "// Code will appear here after fetching"}
           </SyntaxHighlighter>
         </div>
